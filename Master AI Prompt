@@ -1,0 +1,38 @@
+You are an expert PHP and Payment Gateway integration specialist.
+Please integrate PipraPay v3 (Self-Hosted / Hosted) automated payment gateway into my PHP project following these STRICT, tested, and proven technical rules:
+
+--- STRICT PIPRAPAY V3 SPECIFICATIONS ---
+1. AUTHENTICATION HEADER:
+   - Must send header: "MHS-PIPRAPAY-API-KEY: {API_KEY}" (Note the letter 'S' in MHS! Older 'mh-piprapay-api-key' fails on v3).
+   - Also send: "Content-Type: application/json; charset=utf-8" and "Accept: application/json".
+
+2. ENDPOINT RULES & URL NORMALIZATION:
+   - If user sets Base URL as "https://payment.domain.com/api" or "https://payment.domain.com", automatically normalize it to remove trailing "/api" to avoid double "/api/api" bugs:
+     $cleanHost = rtrim(preg_replace('#/api/?$#i', '', $rawBaseUrl), '/');
+   - Primary Checkout Endpoint: "{$cleanHost}/api/checkout/redirect" (Fallback: "{$cleanHost}/api/create-charge").
+   - Verification Endpoint: "{$cleanHost}/api/verify-payment" (Fallback: "{$cleanHost}/api/verify-payments").
+
+3. REQUIRED PAYLOAD PARAMETERS (Missing any of these throws validation error):
+   - 'full_name'       => Customer name string
+   - 'customer_email'  => Valid customer email (e.g. user@gmail.com)
+   - 'email'           => Valid customer email
+   - 'customer_mobile' => 11-digit valid BD phone (e.g. 017XXXXXXXX)
+   - 'mobile_number'   => 11-digit valid BD phone
+   - 'phone'           => 11-digit valid BD phone
+   - 'amount'          => Price as string (e.g. "500")
+   - 'currency'        => 'BDT'
+   - 'return_url'      => Absolute URL to pay-success.php (MUST include return_url and redirect_url)
+   - 'redirect_url'    => Absolute URL to pay-success.php
+   - 'cancel_url'      => Absolute cancel URL
+   - 'webhook_url'     => Absolute URL to api/piprapay-webhook.php
+
+4. THREE REQUIRED FILES ARCHITECTURE:
+   a) pay.php: Creates charge via cURL, inserts pending record in 'payments' table, extracts 'pp_url' and redirects user: header("Location: " . $pp_url);
+   b) pay-success.php: Catches 'pp_id' from GET/POST, queries "{$cleanHost}/api/verify-payment", if status is 'completed', updates payments table and unlocks product/course/balance idempotently.
+   c) api/piprapay-webhook.php: Server-to-server listener. Validates 'MHS-PIPRAPAY-API-KEY' or 'mh-piprapay-api-key', checks payload 'status' == 'completed', updates payments table and unlocks access idempotently, returns HTTP 200 JSON.
+
+5. ERROR HANDLING:
+   - API error responses might return an array or string. Always ensure error variables are converted to string before passing to htmlspecialchars/e() to prevent fatal TypeError.
+
+Please review my project code attached below and implement the payment gateway following these exact rules:
+[এখানে আপনার নতুন স্ক্রিপ্ট বা ফাইল পেস্ট করুন]
